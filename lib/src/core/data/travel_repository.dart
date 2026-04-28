@@ -1,0 +1,150 @@
+import 'package:http/http.dart' as http;
+
+import '../models/audit_event.dart';
+import '../models/place.dart';
+import '../models/settings.dart';
+import '../models/weather.dart';
+import '../utils/weather_codes.dart';
+import 'place_seed.dart';
+import 'remote/photo_api_client.dart';
+import 'remote/weather_api_client.dart';
+import 'travel_store.dart';
+
+class TravelRepository {
+  TravelRepository({
+    required http.Client client,
+    required TravelStore store,
+  })  : _client = client,
+        _store = store,
+        _photoClient = PhotoApiClient(client),
+        _weatherClient = WeatherApiClient(client);
+
+  final http.Client _client;
+  final TravelStore _store;
+  final PhotoApiClient _photoClient;
+  final WeatherApiClient _weatherClient;
+
+  Future<List<TravelPlace>> loadCachedPlaces() {
+    return _store.loadPlaces();
+  }
+
+  Future<List<TravelPlace>> fetchPlaces({int limit = 24}) async {
+    final photos = await _photoClient.fetchPhotos(limit: limit);
+    final now = DateTime.now();
+    final places = photos.asMap().entries.map((entry) {
+      final seed = travelSeeds[entry.key % travelSeeds.length];
+      final photo = entry.value;
+      return TravelPlace(
+        id: seed.id,
+        title: seed.title,
+        region: seed.region,
+        country: seed.country,
+        category: seed.category,
+        description: seed.description,
+        imageUrl: photo['url'] as String,
+        thumbnailUrl: photo['thumbnailUrl'] as String,
+        latitude: seed.latitude,
+        longitude: seed.longitude,
+        rating: seed.rating,
+        sourcePhotoId: photo['id'] as int,
+        createdAt: now.subtract(Duration(minutes: entry.key)),
+      );
+    }).toList();
+    await _store.savePlaces(places);
+    await _store.saveAuditEvents([
+      ...await _store.loadAuditEvents(),
+      AuditEvent(
+        id: now.microsecondsSinceEpoch.toString(),
+        title: 'Travel feed refreshed',
+        details: '${places.length} places loaded from the remote feed.',
+        category: 'sync',
+        createdAt: now,
+      ),
+    ]);
+    return places;
+  }
+
+  Future<TravelPlace?> findPlaceById(String id) async {
+    final cached = await _store.loadPlaces();
+    for (final place in cached) {
+      if (place.id == id) {
+        return place;
+      }
+    }
+    final refreshed = await fetchPlaces();
+    for (final place in refreshed) {
+      if (place.id == id) {
+        return place;
+      }
+    }
+    return null;
+  }
+
+  Future<TravelWeather> fetchWeather(TravelPlace place) async {
+    final cached = await _store.loadWeather(place.id);
+    try {
+      final weather = await _weatherClient.fetchWeather(
+        placeId: place.id,
+        latitude: place.latitude,
+        longitude: place.longitude,
+      );
+      await _store.saveWeather(place.id, weather);
+      return weather;
+    } catch (_) {
+      if (cached != null) {
+        return cached;
+      }
+      rethrow;
+    }
+  }
+
+  Future<TravelWeather?> loadCachedWeather(String placeId) {
+    return _store.loadWeather(placeId);
+  }
+
+  Future<Set<String>> loadFavorites() {
+    return _store.loadFavorites();
+  }
+
+  Future<void> saveFavorites(Set<String> favorites) {
+    return _store.saveFavorites(favorites);
+  }
+
+  Future<AppSettings> loadSettings() {
+    return _store.loadSettings();
+  }
+
+  Future<void> saveSettings(AppSettings settings) {
+    return _store.saveSettings(settings);
+  }
+
+  Future<List<AuditEvent>> loadAuditEvents() {
+    return _store.loadAuditEvents();
+  }
+
+  Future<void> recordEvent(String title, String details,
+      {String category = 'info'}) async {
+    final events = await _store.loadAuditEvents();
+    events.insert(
+      0,
+      AuditEvent(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        title: title,
+        details: details,
+        category: category,
+        createdAt: DateTime.now(),
+      ),
+    );
+    await _store.saveAuditEvents(events.take(40).toList());
+  }
+
+  Future<void> clearCache() async {
+    await _store.clearTravelCache();
+  }
+
+  WeatherCodeInfo weatherInfo(int code) => weatherCodeInfo(code);
+
+  void dispose() {
+    _client.close();
+  }
+}
