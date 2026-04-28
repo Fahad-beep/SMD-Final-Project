@@ -127,4 +127,20 @@ void main() {
 
     expect(place?.title, 'Lake Tekapo');
   });
+
+  test('fetchPlaces falls back to built-in samples when the API fails', () async {
+    final client = MockClient((request) async {
+      throw Exception('network unavailable');
+    });
+    final store = FakeTravelStore();
+    final repository = TravelRepository(client: client, store: store);
+
+    final places = await repository.fetchPlaces(limit: 3);
+
+    expect(places, hasLength(3));
+    expect(places.first.sourcePhotoId, 0);
+    expect(places.first.imageUrl, isEmpty);
+    expect(store.places, hasLength(3));
+    expect(store.events.last.title, 'Built-in travel samples loaded');
+  });
 }

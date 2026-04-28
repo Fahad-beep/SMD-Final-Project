@@ -29,39 +29,72 @@ class TravelRepository {
   }
 
   Future<List<TravelPlace>> fetchPlaces({int limit = 24}) async {
-    final photos = await _photoClient.fetchPhotos(limit: limit);
     final now = DateTime.now();
-    final places = photos.asMap().entries.map((entry) {
-      final seed = travelSeeds[entry.key % travelSeeds.length];
-      final photo = entry.value;
-      return TravelPlace(
-        id: seed.id,
-        title: seed.title,
-        region: seed.region,
-        country: seed.country,
-        category: seed.category,
-        description: seed.description,
-        imageUrl: photo['url'] as String,
-        thumbnailUrl: photo['thumbnailUrl'] as String,
-        latitude: seed.latitude,
-        longitude: seed.longitude,
-        rating: seed.rating,
-        sourcePhotoId: photo['id'] as int,
-        createdAt: now.subtract(Duration(minutes: entry.key)),
-      );
-    }).toList();
-    await _store.savePlaces(places);
-    await _store.saveAuditEvents([
-      ...await _store.loadAuditEvents(),
-      AuditEvent(
-        id: now.microsecondsSinceEpoch.toString(),
-        title: 'Travel feed refreshed',
-        details: '${places.length} places loaded from the remote feed.',
-        category: 'sync',
-        createdAt: now,
-      ),
-    ]);
-    return places;
+    try {
+      final photos = await _photoClient.fetchPhotos(limit: limit);
+      final places = photos.asMap().entries.map((entry) {
+        final seed = travelSeeds[entry.key % travelSeeds.length];
+        final photo = entry.value;
+        return TravelPlace(
+          id: seed.id,
+          title: seed.title,
+          region: seed.region,
+          country: seed.country,
+          category: seed.category,
+          description: seed.description,
+          imageUrl: photo['url'] as String,
+          thumbnailUrl: photo['thumbnailUrl'] as String,
+          latitude: seed.latitude,
+          longitude: seed.longitude,
+          rating: seed.rating,
+          sourcePhotoId: photo['id'] as int,
+          createdAt: now.subtract(Duration(minutes: entry.key)),
+        );
+      }).toList();
+      await _store.savePlaces(places);
+      await _store.saveAuditEvents([
+        ...await _store.loadAuditEvents(),
+        AuditEvent(
+          id: now.microsecondsSinceEpoch.toString(),
+          title: 'Travel feed refreshed',
+          details: '${places.length} places loaded from the remote feed.',
+          category: 'sync',
+          createdAt: now,
+        ),
+      ]);
+      return places;
+    } catch (_) {
+      final cached = await _store.loadPlaces();
+      if (cached.isNotEmpty) {
+        await _store.saveAuditEvents([
+          ...await _store.loadAuditEvents(),
+          AuditEvent(
+            id: now.microsecondsSinceEpoch.toString(),
+            title: 'Travel feed restored from cache',
+            details:
+                'The live feed was unavailable, so cached travel places were shown.',
+            category: 'sync',
+            createdAt: now,
+          ),
+        ]);
+        return cached;
+      }
+
+      final fallback = _buildSeedPlaces(limit: limit, createdAt: now);
+      await _store.savePlaces(fallback);
+      await _store.saveAuditEvents([
+        ...await _store.loadAuditEvents(),
+        AuditEvent(
+          id: now.microsecondsSinceEpoch.toString(),
+          title: 'Built-in travel samples loaded',
+          details:
+              'Local destination samples were prepared because the live feed could not be reached.',
+          category: 'sync',
+          createdAt: now,
+        ),
+      ]);
+      return fallback;
+    }
   }
 
   Future<TravelPlace?> findPlaceById(String id) async {
@@ -146,5 +179,29 @@ class TravelRepository {
 
   void dispose() {
     _client.close();
+  }
+
+  List<TravelPlace> _buildSeedPlaces({
+    required int limit,
+    required DateTime createdAt,
+  }) {
+    return List.generate(limit, (index) {
+      final seed = travelSeeds[index % travelSeeds.length];
+      return TravelPlace(
+        id: seed.id,
+        title: seed.title,
+        region: seed.region,
+        country: seed.country,
+        category: seed.category,
+        description: seed.description,
+        imageUrl: '',
+        thumbnailUrl: '',
+        latitude: seed.latitude,
+        longitude: seed.longitude,
+        rating: seed.rating,
+        sourcePhotoId: 0,
+        createdAt: createdAt.subtract(Duration(minutes: index)),
+      );
+    });
   }
 }

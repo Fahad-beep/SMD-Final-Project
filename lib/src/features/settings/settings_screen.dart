@@ -19,75 +19,41 @@ class SettingsScreen extends ConsumerWidget {
         SliverToBoxAdapter(
           child: Card(
             child: Padding(
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SectionHeader(
-                    title: 'App Preferences',
-                    subtitle: 'Control theme, preview mode, and UI details.',
+                    title: 'Appearance',
+                    subtitle:
+                        'A simple theme control for a polished client experience.',
                   ),
                   const SizedBox(height: 16),
-                  DropdownButtonFormField<AppThemePreference>(
-                    value: settings.themePreference,
-                    decoration: const InputDecoration(labelText: 'Theme'),
-                    items: AppThemePreference.values
-                        .map(
-                          (value) => DropdownMenuItem(
-                            value: value,
-                            child: Text(value.name),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      if (value != null) {
-                        settingsController.setThemePreference(value);
-                      }
-                    },
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: AppThemePreference.values.map((value) {
+                      final selected = settings.themePreference == value;
+                      return ChoiceChip(
+                        selected: selected,
+                        label: Text(_themeLabel(value)),
+                        avatar: Icon(
+                          _themeIcon(value),
+                          size: 18,
+                          color: selected
+                              ? Theme.of(context).colorScheme.onPrimaryContainer
+                              : Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        onSelected: (_) {
+                          settingsController.setThemePreference(value);
+                        },
+                      );
+                    }).toList(),
                   ),
                   const SizedBox(height: 12),
-                  DropdownButtonFormField<AppPreviewMode>(
-                    value: settings.previewMode,
-                    decoration:
-                        const InputDecoration(labelText: 'Preview mode'),
-                    items: AppPreviewMode.values
-                        .map(
-                          (value) => DropdownMenuItem(
-                            value: value,
-                            child: Text(value.name),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      if (value != null) {
-                        settingsController.setPreviewMode(value);
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  SwitchListTile.adaptive(
-                    contentPadding: EdgeInsets.zero,
-                    value: settings.showMapPreview,
-                    title: const Text('Show map preview'),
-                    subtitle:
-                        const Text('Display map-related UI on detail pages.'),
-                    onChanged: settingsController.setShowMapPreview,
-                  ),
-                  SwitchListTile.adaptive(
-                    contentPadding: EdgeInsets.zero,
-                    value: settings.compactCards,
-                    title: const Text('Compact cards'),
-                    subtitle: const Text(
-                        'Show a tighter list layout on smaller screens.'),
-                    onChanged: settingsController.setCompactCards,
-                  ),
-                  SwitchListTile.adaptive(
-                    contentPadding: EdgeInsets.zero,
-                    value: settings.enableNotifications,
-                    title: const Text('Enable reminders'),
-                    subtitle:
-                        const Text('Keep the in-app reminder tools active.'),
-                    onChanged: settingsController.setEnableNotifications,
+                  Text(
+                    _themeDescription(settings.themePreference),
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ],
               ),
@@ -98,14 +64,14 @@ class SettingsScreen extends ConsumerWidget {
         SliverToBoxAdapter(
           child: Card(
             child: Padding(
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SectionHeader(
-                    title: 'Data controls',
+                    title: 'Storage',
                     subtitle:
-                        'Keep the cache healthy and rebuild the feed when needed.',
+                        'Clear saved places if you want a fresh reload from the APIs.',
                   ),
                   const SizedBox(height: 16),
                   Wrap(
@@ -117,7 +83,7 @@ class SettingsScreen extends ConsumerWidget {
                           await feedController.loadInitial();
                         },
                         icon: const Icon(Icons.refresh_rounded),
-                        label: const Text('Reload feed'),
+                        label: const Text('Reload places'),
                       ),
                       OutlinedButton.icon(
                         onPressed: () async {
@@ -129,9 +95,36 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                   Text(
-                    'The preview mode in the drawer can force live, empty, offline, or error states for demonstration and testing.',
+                    'The app keeps previously loaded places on the device so it can still show content when the network is weak.',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SliverToBoxAdapter(child: SizedBox(height: 16)),
+        SliverToBoxAdapter(
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SectionHeader(
+                    title: 'About',
+                    subtitle: 'Project details for the submission pack.',
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Smart Travel Companion is a responsive Flutter app for exploring travel destinations, checking weather, saving favorites, and testing a polished offline flow.',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Data sources: jsonplaceholder.typicode.com/photos and api.open-meteo.com.',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ],
@@ -143,4 +136,28 @@ class SettingsScreen extends ConsumerWidget {
       ],
     );
   }
+}
+
+String _themeLabel(AppThemePreference preference) {
+  return switch (preference) {
+    AppThemePreference.system => 'System',
+    AppThemePreference.light => 'Light',
+    AppThemePreference.dark => 'Dark',
+  };
+}
+
+String _themeDescription(AppThemePreference preference) {
+  return switch (preference) {
+    AppThemePreference.system => 'Matches your phone settings automatically.',
+    AppThemePreference.light => 'Bright and clean for daytime use.',
+    AppThemePreference.dark => 'Soft contrast for low-light use.',
+  };
+}
+
+IconData _themeIcon(AppThemePreference preference) {
+  return switch (preference) {
+    AppThemePreference.system => Icons.brightness_auto_rounded,
+    AppThemePreference.light => Icons.light_mode_rounded,
+    AppThemePreference.dark => Icons.dark_mode_rounded,
+  };
 }

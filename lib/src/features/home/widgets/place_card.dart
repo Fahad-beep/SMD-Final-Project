@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/models/place.dart';
+import '../../widgets/common_widgets.dart';
 
 class PlaceCard extends StatefulWidget {
   const PlaceCard({
@@ -87,20 +88,13 @@ class _PlaceCardState extends State<PlaceCard> {
         children: [
           Hero(
             tag: 'place-image-${widget.place.id}',
-            child: ClipRRect(
+            child: TravelImageFrame(
+              imageUrl: widget.place.imageUrl,
+              fallbackIcon: Icons.flight_takeoff_rounded,
               borderRadius: expanded
                   ? const BorderRadius.horizontal(left: Radius.circular(26))
                   : const BorderRadius.vertical(top: Radius.circular(26)),
-              child: Image.network(
-                widget.place.imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  color: Theme.of(context).colorScheme.surfaceVariant,
-                  child: const Center(
-                    child: Icon(Icons.photo_outlined, size: 42),
-                  ),
-                ),
-              ),
+              fit: BoxFit.cover,
             ),
           ),
           Container(
@@ -193,7 +187,7 @@ class _PlaceCardState extends State<PlaceCard> {
           ),
           const SizedBox(height: 4),
           Text(
-            '${widget.place.country} • ${widget.place.category}',
+            '${widget.place.country} - ${widget.place.category}',
             style: textTheme.bodyMedium,
           ),
           const Spacer(),
@@ -211,7 +205,9 @@ class _PlaceCardState extends State<PlaceCard> {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  'API photo #${widget.place.sourcePhotoId}',
+                  widget.place.sourcePhotoId > 0
+                      ? 'API photo #${widget.place.sourcePhotoId}'
+                      : 'Built-in travel sample',
                   style: textTheme.bodySmall,
                 ),
               ),

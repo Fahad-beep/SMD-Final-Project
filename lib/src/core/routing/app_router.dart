@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/admin/admin_dashboard.dart';
 import '../../features/detail/detail_screen.dart';
 import '../../features/favorites/favorites_screen.dart';
 import '../../features/home/home_screen.dart';
@@ -12,7 +11,6 @@ import '../models/place.dart';
 class AppRouteNames {
   static const home = 'home';
   static const favorites = 'favorites';
-  static const admin = 'admin';
   static const settings = 'settings';
   static const placeDetail = 'placeDetail';
 }
@@ -35,11 +33,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: '/favorites',
             name: AppRouteNames.favorites,
             builder: (context, state) => const FavoritesScreen(),
-          ),
-          GoRoute(
-            path: '/admin',
-            name: AppRouteNames.admin,
-            builder: (context, state) => const AdminDashboardScreen(),
           ),
           GoRoute(
             path: '/settings',

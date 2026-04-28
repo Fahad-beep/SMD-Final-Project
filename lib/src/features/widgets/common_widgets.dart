@@ -229,3 +229,103 @@ class StatusBanner extends StatelessWidget {
     );
   }
 }
+
+class TravelImageFrame extends StatelessWidget {
+  const TravelImageFrame({
+    super.key,
+    required this.imageUrl,
+    required this.fallbackIcon,
+    this.borderRadius = BorderRadius.zero,
+    this.fit = BoxFit.cover,
+  });
+
+  final String imageUrl;
+  final IconData fallbackIcon;
+  final BorderRadius borderRadius;
+  final BoxFit fit;
+
+  @override
+  Widget build(BuildContext context) {
+    final image = imageUrl.trim().isEmpty
+        ? _buildPlaceholder(context)
+        : Image.network(
+            imageUrl,
+            fit: fit,
+            errorBuilder: (context, error, stackTrace) =>
+                _buildPlaceholder(context),
+          );
+
+    return ClipRRect(
+      borderRadius: borderRadius,
+      child: SizedBox.expand(child: image),
+    );
+  }
+
+  Widget _buildPlaceholder(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            scheme.primary.withOpacity(0.96),
+            scheme.secondary.withOpacity(0.92),
+            scheme.tertiary.withOpacity(0.86),
+          ],
+        ),
+      ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Positioned(
+            right: -24,
+            top: -20,
+            child: Icon(
+              Icons.waves_rounded,
+              size: 150,
+              color: Colors.white.withOpacity(0.08),
+            ),
+          ),
+          Positioned(
+            left: -30,
+            bottom: -28,
+            child: Icon(
+              Icons.landscape_rounded,
+              size: 170,
+              color: Colors.white.withOpacity(0.08),
+            ),
+          ),
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.16),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white.withOpacity(0.18)),
+                  ),
+                  child: Icon(
+                    fallbackIcon,
+                    size: 36,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Travel companion',
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

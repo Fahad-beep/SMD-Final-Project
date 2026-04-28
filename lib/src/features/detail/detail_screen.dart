@@ -38,10 +38,12 @@ class _PlaceDetailScreenState extends ConsumerState<PlaceDetailScreen> {
           if (place == null) {
             return _buildLoading();
           }
+
           final weatherAsync = ref.watch(weatherProvider(widget.placeId));
           final favoriteIds = ref.watch(travelFeedControllerProvider).favorites;
           final controller = ref.read(travelFeedControllerProvider.notifier);
           final isFavorite = favoriteIds.contains(place.id);
+
           return SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -72,6 +74,8 @@ class _PlaceDetailScreenState extends ConsumerState<PlaceDetailScreen> {
                                     onFavoriteToggle: () =>
                                         controller.toggleFavorite(place.id),
                                     onOpenMaps: () => _openMaps(place),
+                                    onRetryWeather: () =>
+                                        ref.invalidate(weatherProvider(place.id)),
                                   ),
                                 ),
                               ),
@@ -97,6 +101,8 @@ class _PlaceDetailScreenState extends ConsumerState<PlaceDetailScreen> {
                                 onFavoriteToggle: () =>
                                     controller.toggleFavorite(place.id),
                                 onOpenMaps: () => _openMaps(place),
+                                onRetryWeather: () =>
+                                    ref.invalidate(weatherProvider(place.id)),
                               ),
                             ),
                           ),
@@ -159,17 +165,9 @@ class _HeroSection extends StatelessWidget {
         children: [
           Hero(
             tag: 'place-image-${place.id}',
-            child: Image.network(
-              place.imageUrl,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  color: Theme.of(context).colorScheme.surfaceVariant,
-                  child: const Center(
-                    child: Icon(Icons.photo_outlined, size: 44),
-                  ),
-                );
-              },
+            child: TravelImageFrame(
+              imageUrl: place.imageUrl,
+              fallbackIcon: Icons.explore_rounded,
             ),
           ),
           Container(
@@ -178,8 +176,8 @@ class _HeroSection extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.black.withOpacity(0.1),
-                  Colors.black.withOpacity(0.68),
+                  Colors.black.withOpacity(0.12),
+                  Colors.black.withOpacity(0.72),
                 ],
               ),
             ),
@@ -209,7 +207,7 @@ class _HeroSection extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${place.country} • ${place.category}',
+                  '${place.country} - ${place.category}',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: Colors.white.withOpacity(0.9),
                       ),
@@ -232,6 +230,7 @@ class _DetailContent extends StatelessWidget {
     required this.onToggleExpanded,
     required this.onFavoriteToggle,
     required this.onOpenMaps,
+    required this.onRetryWeather,
   });
 
   final TravelPlace place;
@@ -241,6 +240,7 @@ class _DetailContent extends StatelessWidget {
   final VoidCallback onToggleExpanded;
   final VoidCallback onFavoriteToggle;
   final VoidCallback onOpenMaps;
+  final VoidCallback onRetryWeather;
 
   @override
   Widget build(BuildContext context) {
@@ -278,8 +278,9 @@ class _DetailContent extends StatelessWidget {
             _Tag(label: place.category, icon: Icons.category_rounded),
             _Tag(label: place.region, icon: Icons.public_rounded),
             _Tag(
-                label: '${place.rating.toStringAsFixed(1)} rating',
-                icon: Icons.star_rounded),
+              label: '${place.rating.toStringAsFixed(1)} rating',
+              icon: Icons.star_rounded,
+            ),
           ],
         ),
         const SizedBox(height: 18),
@@ -297,6 +298,7 @@ class _DetailContent extends StatelessWidget {
             loading: () => const _WeatherLoadingCard(),
             error: (error, stackTrace) => _WeatherErrorCard(
               message: error.toString(),
+              onRetry: onRetryWeather,
             ),
           ),
         ),
@@ -517,9 +519,13 @@ class _WeatherLoadingCard extends StatelessWidget {
 }
 
 class _WeatherErrorCard extends StatelessWidget {
-  const _WeatherErrorCard({required this.message});
+  const _WeatherErrorCard({
+    required this.message,
+    required this.onRetry,
+  });
 
   final String message;
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -529,7 +535,7 @@ class _WeatherErrorCard extends StatelessWidget {
         child: ErrorStateView(
           title: 'Weather unavailable',
           subtitle: message,
-          onRetry: () {},
+          onRetry: onRetry,
         ),
       ),
     );

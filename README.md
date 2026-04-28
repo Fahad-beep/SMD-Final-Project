@@ -6,10 +6,9 @@ Flutter advanced application for the SMD final assignment.
 
 - Fetches place data from `jsonplaceholder.typicode.com/photos`
 - Fetches live weather from `api.open-meteo.com`
-- Shows a responsive home feed, detail page, favorites page, settings, and admin dashboard
+- Shows a responsive home feed, detail page, favorites page, and settings page
 - Supports offline cache, pull-to-refresh, search debounce, filters, and animated transitions
 - Uses Riverpod for structured state management and GoRouter for named navigation
-- Includes a web admin panel and a mobile admin area in the same codebase
 
 ## Branch Workflow
 
@@ -29,7 +28,6 @@ Recommended flow:
 - Detail
 - Favorites
 - Settings
-- Admin dashboard
 - Offline and empty/error states
 
 ## Architecture
@@ -59,12 +57,6 @@ flutter analyze
 ```bash
 flutter pub get
 flutter run
-```
-
-Web admin panel:
-
-```bash
-flutter run -d chrome
 ```
 
 ## Build
@@ -119,14 +111,12 @@ The app focuses on:
 - Home feed with images, favorites, filters, search, and pull-to-refresh
 - Detail page with hero animation, weather data, expandable description, and map launch
 - Favorites view for saved places
-- Settings for theme and preview behavior
-- Admin dashboard for testing app states and reviewing usage data
+- Settings for theme and cache controls
 - Responsive layouts for mobile, tablet, and web
 - Dark mode support
 
 ## Notes
 
 - The app uses cached data when the network is unavailable.
-- Admin preview mode can simulate live, empty, offline, and error states.
 - Maps integration opens the selected destination in external maps.
 - The release APK is available locally at `D:\fahad\SMD_flutter_project\build\app\outputs\flutter-apk\app-release.apk`

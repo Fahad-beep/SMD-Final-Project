@@ -104,120 +104,60 @@ class TravelFeedState {
 class TravelFeedController extends StateNotifier<TravelFeedState> {
   TravelFeedController({
     required TravelRepository repository,
-    required AppSettingsController settingsController,
   })  : _repository = repository,
-        _settingsController = settingsController,
         super(const TravelFeedState()) {
     unawaited(loadInitial());
   }
 
   final TravelRepository _repository;
-  final AppSettingsController _settingsController;
 
   Future<void> loadInitial() async {
-    await _settingsController.loadInitial();
     state = state.copyWith(isLoading: true, clearError: true);
     final favorites = await _repository.loadFavorites();
-    final settings = _settingsController.state;
-    final cachedPlaces = await _repository.loadCachedPlaces();
-
-    if (settings.previewMode == AppPreviewMode.error) {
-      state = state.copyWith(
-        favorites: favorites,
-        allPlaces: const [],
-        isLoading: false,
-        isOffline: false,
-        errorMessage: 'Preview mode is set to error.',
-        lastSync: DateTime.now(),
-      );
-      return;
-    }
-
-    if (settings.previewMode == AppPreviewMode.empty) {
-      state = state.copyWith(
-        favorites: favorites,
-        allPlaces: const [],
-        isLoading: false,
-        isOffline: false,
-        clearError: true,
-        lastSync: DateTime.now(),
-      );
-      return;
-    }
-
-    if (cachedPlaces.isNotEmpty) {
-      state = state.copyWith(
-        favorites: favorites,
-        allPlaces: cachedPlaces,
-        isLoading: settings.previewMode == AppPreviewMode.live,
-        isOffline: settings.previewMode == AppPreviewMode.offline,
-        clearError: true,
-        lastSync: DateTime.now(),
-      );
-    } else {
-      state = state.copyWith(
-        favorites: favorites,
-        isLoading: true,
-        clearError: true,
-      );
-    }
-
-    if (settings.previewMode == AppPreviewMode.offline) {
-      state = state.copyWith(
-        isLoading: false,
-        isOffline: true,
-        errorMessage: cachedPlaces.isEmpty
-            ? 'No cached places are available for offline mode.'
-            : null,
-      );
-      return;
-    }
-
     try {
       final places = await _repository.fetchPlaces();
+      final usedFallback = places.every((place) => place.sourcePhotoId <= 0);
       state = state.copyWith(
         favorites: favorites,
         allPlaces: places,
         isLoading: false,
         isRefreshing: false,
         isOffline: false,
-        clearError: true,
+        clearError: !usedFallback,
+        errorMessage: usedFallback
+            ? 'Showing built-in travel samples.'
+            : null,
         lastSync: DateTime.now(),
       );
-    } catch (error) {
+    } catch (_) {
+      final cachedPlaces = await _repository.loadCachedPlaces();
       state = state.copyWith(
+        favorites: favorites,
+        allPlaces: cachedPlaces,
         isLoading: false,
         isRefreshing: false,
-        isOffline: true,
+        isOffline: cachedPlaces.isEmpty,
         errorMessage: cachedPlaces.isEmpty
             ? 'Unable to load travel places. Pull to retry.'
             : 'Showing the last cached travel places.',
+        lastSync: DateTime.now(),
       );
     }
   }
 
   Future<void> refresh() async {
-    final settings = _settingsController.state;
-    if (settings.previewMode == AppPreviewMode.empty) {
-      state = state.copyWith(allPlaces: const [], clearError: true);
-      return;
-    }
-    if (settings.previewMode == AppPreviewMode.error) {
-      state = state.copyWith(
-        isRefreshing: false,
-        errorMessage: 'Preview mode is set to error.',
-        isOffline: false,
-      );
-      return;
-    }
-
     state = state.copyWith(isRefreshing: true, clearError: true);
     try {
       final places = await _repository.fetchPlaces();
+      final usedFallback = places.every((place) => place.sourcePhotoId <= 0);
       state = state.copyWith(
         allPlaces: places,
         isRefreshing: false,
         isOffline: false,
+        clearError: !usedFallback,
+        errorMessage: usedFallback
+            ? 'Showing built-in travel samples.'
+            : null,
         lastSync: DateTime.now(),
       );
     } catch (_) {
@@ -305,31 +245,6 @@ class AppSettingsController extends StateNotifier<AppSettings> {
       category: 'settings',
     );
   }
-
-  Future<void> setPreviewMode(AppPreviewMode mode) async {
-    state = state.copyWith(previewMode: mode);
-    await _repository.saveSettings(state);
-    await _repository.recordEvent(
-      'Preview mode changed',
-      'Preview mode set to ${mode.name}.',
-      category: 'settings',
-    );
-  }
-
-  Future<void> setShowMapPreview(bool value) async {
-    state = state.copyWith(showMapPreview: value);
-    await _repository.saveSettings(state);
-  }
-
-  Future<void> setCompactCards(bool value) async {
-    state = state.copyWith(compactCards: value);
-    await _repository.saveSettings(state);
-  }
-
-  Future<void> setEnableNotifications(bool value) async {
-    state = state.copyWith(enableNotifications: value);
-    await _repository.saveSettings(state);
-  }
 }
 
 final appSettingsControllerProvider =
@@ -344,13 +259,7 @@ final travelFeedControllerProvider =
     StateNotifierProvider<TravelFeedController, TravelFeedState>((ref) {
   final controller = TravelFeedController(
     repository: ref.watch(travelRepositoryProvider),
-    settingsController: ref.read(appSettingsControllerProvider.notifier),
   );
-  ref.listen<AppSettings>(appSettingsControllerProvider, (previous, next) {
-    if (previous?.previewMode != next.previewMode) {
-      unawaited(controller.loadInitial());
-    }
-  });
   return controller;
 });
 

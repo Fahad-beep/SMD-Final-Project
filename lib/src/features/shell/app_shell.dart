@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/state/app_providers.dart';
 import '../../core/models/settings.dart';
+import '../../core/state/app_providers.dart';
 
 class AppShell extends ConsumerWidget {
   const AppShell({super.key, required this.child});
@@ -33,32 +33,12 @@ class AppShell extends ConsumerWidget {
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            tooltip: 'Toggle theme',
-            onPressed: () async {
-              final current = settings.themePreference;
-              final next = switch (current) {
-                AppThemePreference.system => AppThemePreference.dark,
-                AppThemePreference.dark => AppThemePreference.light,
-                AppThemePreference.light => AppThemePreference.system,
-              };
-              await ref
-                  .read(appSettingsControllerProvider.notifier)
-                  .setThemePreference(next);
-            },
-            icon: Icon(
-              switch (settings.themePreference) {
-                AppThemePreference.system => Icons.brightness_auto_rounded,
-                AppThemePreference.light => Icons.light_mode_rounded,
-                AppThemePreference.dark => Icons.dark_mode_rounded,
-              },
-            ),
-          ),
-          const SizedBox(width: 8),
-        ],
       ),
-      drawer: wideLayout ? null : _AppDrawer(currentIndex: selectedIndex),
+      floatingActionButton: FloatingActionButton(
+        tooltip: 'Appearance',
+        onPressed: () => _showAppearanceSheet(context, ref, settings),
+        child: const Icon(Icons.palette_rounded),
+      ),
       bottomNavigationBar: wideLayout
           ? null
           : NavigationBar(
@@ -115,11 +95,8 @@ class AppShell extends ConsumerWidget {
     if (location.startsWith('/favorites')) {
       return 1;
     }
-    if (location.startsWith('/admin')) {
-      return 2;
-    }
     if (location.startsWith('/settings')) {
-      return 3;
+      return 2;
     }
     return 0;
   }
@@ -127,9 +104,6 @@ class AppShell extends ConsumerWidget {
   static String _titleForLocation(String location) {
     if (location.startsWith('/favorites')) {
       return 'My Favorites';
-    }
-    if (location.startsWith('/admin')) {
-      return 'Admin Studio';
     }
     if (location.startsWith('/settings')) {
       return 'Settings';
@@ -166,12 +140,6 @@ const _destinations = [
     selectedIcon: Icons.favorite_rounded,
   ),
   _NavItem(
-    label: 'Admin',
-    path: '/admin',
-    icon: Icons.dashboard_outlined,
-    selectedIcon: Icons.dashboard_rounded,
-  ),
-  _NavItem(
     label: 'Settings',
     path: '/settings',
     icon: Icons.settings_outlined,
@@ -179,104 +147,84 @@ const _destinations = [
   ),
 ];
 
-class _AppDrawer extends ConsumerWidget {
-  const _AppDrawer({required this.currentIndex});
-
-  final int currentIndex;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(appSettingsControllerProvider);
-    return Drawer(
-      child: SafeArea(
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Theme.of(context).colorScheme.primary,
-                    Theme.of(context).colorScheme.tertiary,
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CircleAvatar(
-                    radius: 20,
-                    child: Icon(Icons.flight_takeoff_rounded),
-                  ),
-                  SizedBox(height: 12),
-                  Text(
-                    'Smart Travel Companion',
-                    style: TextStyle(
-                      color: Colors.white,
+Future<void> _showAppearanceSheet(
+  BuildContext context,
+  WidgetRef ref,
+  AppSettings settings,
+) async {
+  await showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    isScrollControlled: true,
+    builder: (sheetContext) {
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Appearance',
+                style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w800,
-                      fontSize: 18,
                     ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Travel planning, testing, and offline support in one place.',
-                    style: TextStyle(color: Colors.white70),
-                  ),
-                ],
               ),
-            ),
-            ...List.generate(_destinations.length, (index) {
-              final item = _destinations[index];
-              return ListTile(
-                selected: index == currentIndex,
-                leading: Icon(index == currentIndex
-                    ? item.selectedIcon ?? item.icon
-                    : item.icon),
-                title: Text(item.label),
-                onTap: () {
-                  Navigator.pop(context);
-                  context.go(item.path);
-                },
-              );
-            }),
-            const Spacer(),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Preview mode',
-                    style: Theme.of(context).textTheme.labelLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<AppPreviewMode>(
-                    value: settings.previewMode,
-                    items: AppPreviewMode.values
-                        .map(
-                          (mode) => DropdownMenuItem(
-                            value: mode,
-                            child: Text(mode.name),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (mode) {
-                      if (mode != null) {
-                        ref
+              const SizedBox(height: 6),
+              Text(
+                'Choose the look that feels best on your device.',
+                style: Theme.of(sheetContext).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 16),
+              ...AppThemePreference.values.map(
+                (value) => Card(
+                  child: RadioListTile<AppThemePreference>(
+                    value: value,
+                    groupValue: settings.themePreference,
+                    onChanged: (selected) async {
+                      if (selected != null) {
+                        await ref
                             .read(appSettingsControllerProvider.notifier)
-                            .setPreviewMode(mode);
+                            .setThemePreference(selected);
+                        if (context.mounted) {
+                          Navigator.of(sheetContext).pop();
+                        }
                       }
                     },
+                    title: Text(_themeLabel(value)),
+                    subtitle: Text(_themeDescription(value)),
+                    secondary: Icon(_themeIcon(value)),
                   ),
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
-  }
+      );
+    },
+  );
+}
+
+String _themeLabel(AppThemePreference preference) {
+  return switch (preference) {
+    AppThemePreference.system => 'System',
+    AppThemePreference.light => 'Light',
+    AppThemePreference.dark => 'Dark',
+  };
+}
+
+String _themeDescription(AppThemePreference preference) {
+  return switch (preference) {
+    AppThemePreference.system => 'Follows your phone settings automatically.',
+    AppThemePreference.light => 'Bright cards and clean contrast for daytime use.',
+    AppThemePreference.dark => 'Deep colors with softer highlights for low-light use.',
+  };
+}
+
+IconData _themeIcon(AppThemePreference preference) {
+  return switch (preference) {
+    AppThemePreference.system => Icons.brightness_auto_rounded,
+    AppThemePreference.light => Icons.light_mode_rounded,
+    AppThemePreference.dark => Icons.dark_mode_rounded,
+  };
 }

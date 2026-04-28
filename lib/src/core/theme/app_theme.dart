@@ -2,21 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static const Color midnight = Color(0xFF0E1320);
-  static const Color midnightSoft = Color(0xFF171E31);
-  static const Color lilac = Color(0xFF7D68F7);
-  static const Color sky = Color(0xFF5ED3F3);
-  static const Color coral = Color(0xFFFF8E72);
-  static const Color sand = Color(0xFFF6F1E8);
+  static const Color midnight = Color(0xFF0B1320);
+  static const Color midnightSoft = Color(0xFF151D2D);
+  static const Color ocean = Color(0xFF2F6F75);
+  static const Color sky = Color(0xFF63C7D8);
+  static const Color coral = Color(0xFFE58B6D);
+  static const Color sand = Color(0xFFF6F1E7);
 
   static ThemeData light() {
     final scheme = ColorScheme.fromSeed(
-      seedColor: lilac,
+      seedColor: ocean,
       brightness: Brightness.light,
-      primary: lilac,
+      primary: ocean,
       secondary: sky,
       tertiary: coral,
-      surface: const Color(0xFFF5F7FC),
+      surface: const Color(0xFFF4F7F8),
       background: sand,
     );
     return _themeFromScheme(
@@ -29,9 +29,9 @@ class AppTheme {
 
   static ThemeData dark() {
     final scheme = ColorScheme.fromSeed(
-      seedColor: lilac,
+      seedColor: ocean,
       brightness: Brightness.dark,
-      primary: const Color(0xFF9A8CFF),
+      primary: const Color(0xFF7DD3DA),
       secondary: sky,
       tertiary: coral,
       surface: midnightSoft,
@@ -113,6 +113,17 @@ class AppTheme {
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: scheme.primary,
+        foregroundColor: scheme.onPrimary,
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: cardColor,
+        surfaceTintColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
       ),
       chipTheme: ChipThemeData(
         backgroundColor: cardColor,

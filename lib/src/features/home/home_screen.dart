@@ -38,14 +38,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(travelFeedControllerProvider);
-    final settings = ref.watch(appSettingsControllerProvider);
     final controller = ref.read(travelFeedControllerProvider.notifier);
     final places = state.visiblePlaces;
     final regions =
         state.allPlaces.map((place) => place.region).toSet().toList()..sort();
     final categories =
         state.allPlaces.map((place) => place.category).toSet().toList()..sort();
-    final compact = settings.compactCards;
+    final compact = MediaQuery.sizeOf(context).width < 720;
 
     return RefreshIndicator(
       onRefresh: controller.refresh,
@@ -129,7 +128,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 icon: Icons.travel_explore_rounded,
                 title: 'No places found',
                 subtitle:
-                    'Try a different search term, clear the filters, or switch the preview mode back to live.',
+                    'Try a different search term, clear the filters, or pull to refresh.',
               ),
             )
           else
@@ -217,7 +216,7 @@ class _HeaderCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Live place data, weather details, offline cache, and an admin lab for testing every screen.',
+                        'Live place data, weather details, offline cache, and polished travel browsing.',
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                               color: Colors.white.withOpacity(0.9),
                               height: 1.35,
@@ -473,7 +472,7 @@ class _SearchAndFiltersCard extends StatelessWidget {
           Text(
             query.isEmpty
                 ? 'Showing curated destinations'
-                : 'Results for “$query”',
+                : 'Results for "$query"',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
