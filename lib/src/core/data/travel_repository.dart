@@ -6,6 +6,7 @@ import '../models/settings.dart';
 import '../models/weather.dart';
 import '../utils/weather_codes.dart';
 import 'place_seed.dart';
+import 'remote/location_image_client.dart';
 import 'remote/photo_api_client.dart';
 import 'remote/weather_api_client.dart';
 import 'travel_store.dart';
@@ -17,11 +18,13 @@ class TravelRepository {
   })  : _client = client,
         _store = store,
         _photoClient = PhotoApiClient(client),
+        _locationImageClient = LocationImageClient(client),
         _weatherClient = WeatherApiClient(client);
 
   final http.Client _client;
   final TravelStore _store;
   final PhotoApiClient _photoClient;
+  final LocationImageClient _locationImageClient;
   final WeatherApiClient _weatherClient;
 
   Future<List<TravelPlace>> loadCachedPlaces() {
@@ -32,6 +35,12 @@ class TravelRepository {
     final now = DateTime.now();
     try {
       final photos = await _photoClient.fetchPhotos(limit: limit);
+      final imageUrls = await Future.wait(
+        photos.asMap().entries.map((entry) {
+          final seed = travelSeeds[entry.key % travelSeeds.length];
+          return _resolveImageUrl(seed: seed);
+        }),
+      );
       final places = photos.asMap().entries.map((entry) {
         final seed = travelSeeds[entry.key % travelSeeds.length];
         final photo = entry.value;
@@ -42,7 +51,7 @@ class TravelRepository {
           country: seed.country,
           category: seed.category,
           description: seed.description,
-          imageUrl: photo['url'] as String,
+          imageUrl: imageUrls[entry.key],
           thumbnailUrl: photo['thumbnailUrl'] as String,
           latitude: seed.latitude,
           longitude: seed.longitude,
@@ -194,8 +203,10 @@ class TravelRepository {
         country: seed.country,
         category: seed.category,
         description: seed.description,
-        imageUrl: '',
-        thumbnailUrl: '',
+        imageUrl:
+            'https://source.unsplash.com/featured/1600x900/?${Uri.encodeComponent('${seed.title} ${seed.country}')}',
+        thumbnailUrl:
+            'https://source.unsplash.com/featured/400x300/?${Uri.encodeComponent('${seed.title} ${seed.country}')}',
         latitude: seed.latitude,
         longitude: seed.longitude,
         rating: seed.rating,
@@ -203,5 +214,19 @@ class TravelRepository {
         createdAt: createdAt.subtract(Duration(minutes: index)),
       );
     });
+  }
+
+  Future<String> _resolveImageUrl({
+    required TravelSeed seed,
+  }) async {
+    final wikiUrl = await _locationImageClient.fetchImageUrl(
+      title: seed.title,
+      country: seed.country,
+      category: seed.category,
+    );
+    if (wikiUrl != null && wikiUrl.isNotEmpty) {
+      return wikiUrl;
+    }
+    return 'https://source.unsplash.com/featured/1600x900/?${Uri.encodeComponent('${seed.title} ${seed.country} travel')}';
   }
 }

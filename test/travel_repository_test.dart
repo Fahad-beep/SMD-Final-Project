@@ -95,7 +95,7 @@ void main() {
 
     expect(places, hasLength(2));
     expect(places.first.title, travelSeeds.first.title);
-    expect(places.first.imageUrl, 'https://example.com/1.jpg');
+    expect(places.first.imageUrl, startsWith('https://source.unsplash.com/'));
     expect(store.places, hasLength(2));
   });
 
@@ -139,7 +139,7 @@ void main() {
 
     expect(places, hasLength(3));
     expect(places.first.sourcePhotoId, 0);
-    expect(places.first.imageUrl, isEmpty);
+    expect(places.first.imageUrl, startsWith('https://source.unsplash.com/'));
     expect(store.places, hasLength(3));
     expect(store.events.last.title, 'Built-in travel samples loaded');
   });

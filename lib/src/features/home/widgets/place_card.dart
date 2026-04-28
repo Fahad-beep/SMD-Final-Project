@@ -30,7 +30,6 @@ class _PlaceCardState extends State<PlaceCard> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final isWide = MediaQuery.sizeOf(context).width >= 700;
-    final cardHeight = widget.compact ? 164.0 : 192.0;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovering = true),
@@ -58,31 +57,42 @@ class _PlaceCardState extends State<PlaceCard> {
         child: InkWell(
           borderRadius: BorderRadius.circular(26),
           onTap: widget.onTap,
-          child: SizedBox(
-            height: cardHeight,
-            child: isWide
-                ? Row(
+          child: isWide
+              ? IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _imageSection(context, expanded: true),
-                      Expanded(child: _detailsSection(context)),
-                    ],
-                  )
-                : Column(
-                    children: [
-                      _imageSection(context, expanded: false),
+                      SizedBox(
+                        width: 240,
+                        child: _imageSection(context, expanded: true),
+                      ),
                       Expanded(child: _detailsSection(context)),
                     ],
                   ),
-          ),
+                )
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _imageSection(context, expanded: false),
+                    _detailsSection(context),
+                  ],
+                ),
         ),
       ),
     );
   }
 
   Widget _imageSection(BuildContext context, {required bool expanded}) {
+    final brightness = Theme.of(context).brightness;
+    final chipBg = brightness == Brightness.dark
+        ? Colors.white.withOpacity(0.16)
+        : Theme.of(context).colorScheme.primaryContainer.withOpacity(0.88);
+    final chipFg = brightness == Brightness.dark
+        ? Colors.white
+        : Theme.of(context).colorScheme.onPrimaryContainer;
+
     return SizedBox(
-      width: expanded ? 240 : double.infinity,
-      height: expanded ? double.infinity : 112,
+      height: expanded ? double.infinity : 188,
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -103,7 +113,7 @@ class _PlaceCardState extends State<PlaceCard> {
                 begin: Alignment.bottomCenter,
                 end: Alignment.topCenter,
                 colors: [
-                  Colors.black.withOpacity(0.52),
+                  Colors.black.withOpacity(0.5),
                   Colors.transparent,
                 ],
               ),
@@ -119,10 +129,10 @@ class _PlaceCardState extends State<PlaceCard> {
                   visualDensity: VisualDensity.compact,
                   label: Text(
                     widget.place.region,
-                    style: const TextStyle(color: Colors.white),
+                    style: TextStyle(color: chipFg),
                   ),
-                  backgroundColor: Colors.white.withOpacity(0.16),
-                  side: BorderSide.none,
+                  backgroundColor: chipBg,
+                  side: BorderSide(color: chipFg.withOpacity(0.08)),
                 ),
                 const Spacer(),
                 AnimatedScale(
@@ -156,6 +166,7 @@ class _PlaceCardState extends State<PlaceCard> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -185,19 +196,19 @@ class _PlaceCardState extends State<PlaceCard> {
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             '${widget.place.country} - ${widget.place.category}',
             style: textTheme.bodyMedium,
           ),
-          const Spacer(),
+          const SizedBox(height: 12),
           Text(
             widget.place.description,
             maxLines: widget.compact ? 2 : 3,
             overflow: TextOverflow.ellipsis,
             style: textTheme.bodyMedium?.copyWith(height: 1.35),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Row(
             children: [
               Icon(Icons.photo_library_outlined,
@@ -207,7 +218,7 @@ class _PlaceCardState extends State<PlaceCard> {
                 child: Text(
                   widget.place.sourcePhotoId > 0
                       ? 'API photo #${widget.place.sourcePhotoId}'
-                      : 'Built-in travel sample',
+                      : 'Location image sourced from the web',
                   style: textTheme.bodySmall,
                 ),
               ),
