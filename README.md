@@ -75,11 +75,37 @@ APK:
 flutter build apk --release
 ```
 
+Local APK path after a release build:
+
+```text
+D:\fahad\SMD_flutter_project\build\app\outputs\flutter-apk\app-release.apk
+```
+
 Web build:
 
 ```bash
 flutter build web --release
 ```
+
+## Demo Video
+
+Suggested short demo flow:
+
+1. Open the app and show the branded splash screen.
+2. Walk through the home screen, search, filters, refresh, and favorites.
+3. Open a place detail page to show hero animation, weather, expandable text, and map launch.
+4. Switch to offline or empty preview mode from the admin panel to show error handling and cached data.
+5. Open the settings screen and show dark mode, preview mode, and cache controls.
+6. End by showing the admin dashboard with metrics and activity logs.
+
+Suggested length: 60 to 90 seconds.
+
+## Submission Checklist
+
+- Flutter source code pushed to GitHub
+- APK file uploaded to Classroom
+- DOCX project summary uploaded to Classroom
+- README kept in the repo for setup and grading context
 
 ## Notes
 
