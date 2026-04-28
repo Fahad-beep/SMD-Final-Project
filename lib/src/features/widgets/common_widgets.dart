@@ -251,6 +251,14 @@ class TravelImageFrame extends StatelessWidget {
         : Image.network(
             imageUrl,
             fit: fit,
+            alignment: Alignment.center,
+            filterQuality: FilterQuality.medium,
+            loadingBuilder: (context, child, progress) {
+              if (progress == null) {
+                return child;
+              }
+              return _buildPlaceholder(context);
+            },
             errorBuilder: (context, error, stackTrace) =>
                 _buildPlaceholder(context),
           );

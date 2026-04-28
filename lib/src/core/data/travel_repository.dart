@@ -203,10 +203,8 @@ class TravelRepository {
         country: seed.country,
         category: seed.category,
         description: seed.description,
-        imageUrl:
-            'https://source.unsplash.com/featured/1600x900/?${Uri.encodeComponent('${seed.title} ${seed.country}')}',
-        thumbnailUrl:
-            'https://source.unsplash.com/featured/400x300/?${Uri.encodeComponent('${seed.title} ${seed.country}')}',
+        imageUrl: _imageUrlForSeed(seed, 1600, 900),
+        thumbnailUrl: _imageUrlForSeed(seed, 500, 350),
         latitude: seed.latitude,
         longitude: seed.longitude,
         rating: seed.rating,
@@ -219,14 +217,21 @@ class TravelRepository {
   Future<String> _resolveImageUrl({
     required TravelSeed seed,
   }) async {
-    final wikiUrl = await _locationImageClient.fetchImageUrl(
-      title: seed.title,
-      country: seed.country,
-      category: seed.category,
-    );
+    final wikiUrl = await _locationImageClient
+        .fetchImageUrl(
+          title: seed.title,
+          country: seed.country,
+          category: seed.category,
+        )
+        .timeout(const Duration(seconds: 2), onTimeout: () => null);
     if (wikiUrl != null && wikiUrl.isNotEmpty) {
       return wikiUrl;
     }
-    return 'https://source.unsplash.com/featured/1600x900/?${Uri.encodeComponent('${seed.title} ${seed.country} travel')}';
+    return _imageUrlForSeed(seed, 1600, 900);
+  }
+
+  String _imageUrlForSeed(TravelSeed seed, int width, int height) {
+    final key = '${seed.id}-${seed.country}-${seed.category}';
+    return 'https://picsum.photos/seed/${Uri.encodeComponent(key)}/$width/$height';
   }
 }

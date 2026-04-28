@@ -208,20 +208,16 @@ class _PlaceCardState extends State<PlaceCard> {
             overflow: TextOverflow.ellipsis,
             style: textTheme.bodyMedium?.copyWith(height: 1.35),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           Row(
             children: [
-              Icon(Icons.photo_library_outlined,
-                  size: 16, color: textTheme.bodySmall?.color),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  widget.place.sourcePhotoId > 0
-                      ? 'API photo #${widget.place.sourcePhotoId}'
-                      : 'Location image sourced from the web',
-                  style: textTheme.bodySmall,
+              Text(
+                'View place details',
+                style: textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
                 ),
               ),
+              const Spacer(),
               Icon(Icons.arrow_forward_rounded,
                   size: 18, color: textTheme.bodyMedium?.color),
             ],
