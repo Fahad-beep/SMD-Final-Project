@@ -87,29 +87,46 @@ Web build:
 flutter build web --release
 ```
 
-## Demo Video
-
-Suggested short demo flow:
-
-1. Open the app and show the branded splash screen.
-2. Walk through the home screen, search, filters, refresh, and favorites.
-3. Open a place detail page to show hero animation, weather, expandable text, and map launch.
-4. Switch to offline or empty preview mode from the admin panel to show error handling and cached data.
-5. Open the settings screen and show dark mode, preview mode, and cache controls.
-6. End by showing the admin dashboard with metrics and activity logs.
-
-Suggested length: 60 to 90 seconds.
-
 ## Submission Checklist
 
 - Flutter source code pushed to GitHub
+- Branches kept in sync across `development`, `staging`, and `main`
 - APK file uploaded to Classroom
 - DOCX project summary uploaded to Classroom
-- README kept in the repo for setup and grading context
+- README kept in the repo for setup, grading context, and build instructions
+- Release APK built from the project on this machine
+
+## Project Overview
+
+Smart Travel Companion is a Flutter application built for the SMD final assignment. It combines a responsive travel-style interface with live data, local caching, animated transitions, and structured state management.
+
+The app focuses on:
+
+- Clean feature-based architecture
+- Riverpod state management
+- GoRouter navigation with complex arguments
+- Offline support through local caching
+- API-driven UI with friendly loading, empty, and error states
+- A consistent mobile and web experience
+
+## API Sources
+
+- `https://jsonplaceholder.typicode.com/photos`
+- `https://api.open-meteo.com/v1/forecast`
+
+## Key Features
+
+- Home feed with images, favorites, filters, search, and pull-to-refresh
+- Detail page with hero animation, weather data, expandable description, and map launch
+- Favorites view for saved places
+- Settings for theme and preview behavior
+- Admin dashboard for testing app states and reviewing usage data
+- Responsive layouts for mobile, tablet, and web
+- Dark mode support
 
 ## Notes
 
 - The app uses cached data when the network is unavailable.
 - Admin preview mode can simulate live, empty, offline, and error states.
 - Maps integration opens the selected destination in external maps.
-- A demo video and release APK can be added to the repository or release artifacts before submission.
+- The release APK is available locally at `D:\fahad\SMD_flutter_project\build\app\outputs\flutter-apk\app-release.apk`
