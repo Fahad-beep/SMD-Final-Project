@@ -6,7 +6,6 @@ import '../models/settings.dart';
 import '../models/weather.dart';
 import '../utils/weather_codes.dart';
 import 'place_seed.dart';
-import 'remote/location_image_client.dart';
 import 'remote/photo_api_client.dart';
 import 'remote/weather_api_client.dart';
 import 'travel_store.dart';
@@ -18,13 +17,11 @@ class TravelRepository {
   })  : _client = client,
         _store = store,
         _photoClient = PhotoApiClient(client),
-        _locationImageClient = LocationImageClient(client),
         _weatherClient = WeatherApiClient(client);
 
   final http.Client _client;
   final TravelStore _store;
   final PhotoApiClient _photoClient;
-  final LocationImageClient _locationImageClient;
   final WeatherApiClient _weatherClient;
 
   Future<List<TravelPlace>> loadCachedPlaces() {
@@ -35,12 +32,6 @@ class TravelRepository {
     final now = DateTime.now();
     try {
       final photos = await _photoClient.fetchPhotos(limit: limit);
-      final imageUrls = await Future.wait(
-        photos.asMap().entries.map((entry) {
-          final seed = travelSeeds[entry.key % travelSeeds.length];
-          return _resolveImageUrl(seed: seed);
-        }),
-      );
       final places = photos.asMap().entries.map((entry) {
         final seed = travelSeeds[entry.key % travelSeeds.length];
         final photo = entry.value;
@@ -51,7 +42,7 @@ class TravelRepository {
           country: seed.country,
           category: seed.category,
           description: seed.description,
-          imageUrl: imageUrls[entry.key],
+          imageUrl: _resolveImageUrl(seed: seed),
           thumbnailUrl: photo['thumbnailUrl'] as String,
           latitude: seed.latitude,
           longitude: seed.longitude,
@@ -214,19 +205,9 @@ class TravelRepository {
     });
   }
 
-  Future<String> _resolveImageUrl({
+  String _resolveImageUrl({
     required TravelSeed seed,
-  }) async {
-    final wikiUrl = await _locationImageClient
-        .fetchImageUrl(
-          title: seed.title,
-          country: seed.country,
-          category: seed.category,
-        )
-        .timeout(const Duration(seconds: 2), onTimeout: () => null);
-    if (wikiUrl != null && wikiUrl.isNotEmpty) {
-      return wikiUrl;
-    }
+  }) {
     return _imageUrlForSeed(seed, 1600, 900);
   }
 

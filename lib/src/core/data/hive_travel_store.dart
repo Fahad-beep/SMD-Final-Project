@@ -1,6 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 
-import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/audit_event.dart';
@@ -19,8 +20,12 @@ class HiveTravelStore implements TravelStore {
   );
 
   static Future<HiveTravelStore> open() async {
-    final directory = await getApplicationDocumentsDirectory();
-    Hive.init(directory.path);
+    if (kIsWeb) {
+      await Hive.initFlutter();
+    } else {
+      final directory = await getApplicationDocumentsDirectory();
+      Hive.init(directory.path);
+    }
     final placesBox = await Hive.openBox('travel_places');
     final weatherBox = await Hive.openBox('travel_weather');
     final favoritesBox = await Hive.openBox('travel_favorites');
